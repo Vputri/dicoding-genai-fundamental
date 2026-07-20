@@ -358,28 +358,40 @@ print("model segmentation dimuat:", SEG_MODEL_ID)
 import numpy as np
 
 
-def buat_mask_segmentasi(image, label_target):
-    segmen = segmenter(image)
-    tersedia = [s["label"] for s in segmen]
-
-    terpilih = [s for s in segmen if s["label"].lower() == label_target.lower()]
-    if not terpilih:
-        return None, tersedia
-
+def _mask_dari_segmen(image, segmen_terpilih):
     gabungan = np.zeros((image.size[1], image.size[0]), dtype=np.uint8)
-    for s in terpilih:
-        gabungan = np.maximum(gabungan, np.array(s["mask"].convert("L")))
-    return Image.fromarray(gabungan).resize(image.size), tersedia
+    for s in segmen_terpilih:
+        m = np.array(s["mask"].convert("L").resize(image.size))
+        gabungan = np.maximum(gabungan, m)
+    return Image.fromarray(gabungan)
 
 
-# Label disesuaikan dengan yang benar-benar terdeteksi pada gambar Anda.
-mask_auto, label_tersedia = buat_mask_segmentasi(img_advanced, "sky")
-print("label terdeteksi:", label_tersedia)
+def buat_mask_segmentasi(image, label_prioritas=("sky", "background", "wall", "ceiling")):
+    # Label yang dikenali model segmentation berbeda-beda tergantung isi gambar,
+    # sehingga pemilihannya dibuat adaptif:
+    #   1) pakai label prioritas pertama yang benar-benar terdeteksi;
+    #   2) bila tidak ada, ambil segmen dengan area terluas.
+    # Dengan begitu selalu ada mask yang valid untuk tahap generate berikutnya.
+    segmen = segmenter(image)
+    if not segmen:
+        raise RuntimeError("Model segmentation tidak mendeteksi objek apa pun.")
 
-if mask_auto is not None:
-    display(pratinjau_mask(img_advanced, mask_auto))
-else:
-    print("label target tidak ditemukan — pilih salah satu dari daftar di atas.")
+    tersedia = [s["label"] for s in segmen]
+    print("label terdeteksi:", tersedia)
+
+    for target in label_prioritas:
+        cocok = [s for s in segmen if s["label"].lower() == target.lower()]
+        if cocok:
+            print(f"label dipakai: '{target}' (dari daftar prioritas)")
+            return _mask_dari_segmen(image, cocok), target
+
+    terluas = max(segmen, key=lambda s: np.count_nonzero(np.array(s["mask"].convert("L"))))
+    print(f"tidak ada label prioritas yang cocok — memakai segmen terluas: '{terluas['label']}'")
+    return _mask_dari_segmen(image, [terluas]), terluas["label"]
+
+
+mask_auto, label_dipakai = buat_mask_segmentasi(img_advanced)
+display(pratinjau_mask(img_advanced, mask_auto))
 """),
 
     md("foiYnRrOkMZO", "### **Generate**"),
@@ -387,6 +399,13 @@ else:
 PROMPT_AUTOMASK = (
     "colorful nebula and distant stars in deep space, "
     "flat vector illustration, pastel color palette, clean lines"
+)
+
+# Penjaga: memastikan mask hasil segmentasi benar-benar terbentuk sebelum dipakai.
+assert mask_auto is not None, "mask_auto kosong — jalankan ulang sel Masking di atas."
+assert np.count_nonzero(np.array(mask_auto)) > 0, (
+    f"Mask dari label '{label_dipakai}' seluruhnya hitam, tidak ada area yang diganti. "
+    "Ganti label_prioritas pada sel Masking dengan salah satu label yang tercetak di sana."
 )
 
 img_automask = inpaint_engine(
