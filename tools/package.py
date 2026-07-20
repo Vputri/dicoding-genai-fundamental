@@ -36,12 +36,24 @@ for nama in WAJIB:
     if p.suffix == ".ipynb":
         nb = json.loads(p.read_text(encoding="utf-8"))
         kode = [c for c in nb["cells"] if c["cell_type"] == "code"]
-        kosong = [c for c in kode if not c.get("outputs")]
-        if kosong:
+
+        # Penanda "sudah dijalankan" adalah execution_count, bukan ada-tidaknya
+        # output: sel berisi import atau %%writefile memang tidak menghasilkan
+        # output apa pun meski sudah dieksekusi.
+        belum = [c for c in kode if c.get("execution_count") is None]
+        if belum:
             masalah.append(
-                f"{nama}: {len(kosong)}/{len(kode)} sel kode belum punya output "
+                f"{nama}: {len(belum)}/{len(kode)} sel kode belum dijalankan "
                 "— jalankan di Colab lalu unduh ulang"
             )
+
+        ada_error = [
+            c for c in kode
+            for o in c.get("outputs", [])
+            if o.get("output_type") == "error"
+        ]
+        if ada_error:
+            masalah.append(f"{nama}: {len(ada_error)} sel berakhir dengan error")
 
         # Baris komentar dilewati: menyebut SDXL untuk menjelaskan mengapa TIDAK
         # dipakai bukan pelanggaran — yang dilarang adalah benar-benar memuatnya.

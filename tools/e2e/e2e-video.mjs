@@ -10,7 +10,7 @@
 // merekam layar sendiri — lihat README.
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, renameSync, mkdirSync } from 'node:fs';
+import { readdirSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const URL = process.argv[2] || process.env.APP_URL;
@@ -58,6 +58,7 @@ await ctx.addInitScript(SKRIP_KURSOR);
 const page = await ctx.newPage();
 page.setDefaultTimeout(60000);
 
+let inpaintBerhasil = false;
 const t0 = Date.now();
 const detik = () => ((Date.now() - t0) / 1000).toFixed(0).padStart(3);
 
@@ -95,8 +96,34 @@ try {
   console.log(`[${detik()}s] mengatur slider & scheduler`);
   const sliders = page.locator('[data-testid="stSlider"]');
   const n = await sliders.count();
+  // Mendukung dua bentuk slider: baseweb (<=1.40, punya [role="slider"])
+  // dan react-aria (>=1.41, harus diklik pada treknya).
   async function geser(idx, frac) {
-    const trek = sliders.nth(idx).locator('div[data-orientation="horizontal"]').last();
+    const slider = sliders.nth(idx);
+    const thumb = slider.locator('[role="slider"]');
+
+    if (await thumb.count() > 0) {
+      const t = thumb.first();
+      const info = await t.evaluate(el => ({
+        now: Number(el.getAttribute('aria-valuenow')),
+        min: Number(el.getAttribute('aria-valuemin')),
+        max: Number(el.getAttribute('aria-valuemax')),
+      }));
+      const b = await t.boundingBox();
+      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 20 });
+      await t.focus();
+      const target = info.min + (info.max - info.min) * frac;
+      const langkah = Math.min(60, Math.round(Math.abs(target - info.now)));
+      const tombol = target > info.now ? 'ArrowRight' : 'ArrowLeft';
+      for (let i = 0; i < langkah; i++) {
+        await page.keyboard.press(tombol);
+        await page.waitForTimeout(20);
+      }
+      await page.waitForTimeout(1000);
+      return;
+    }
+
+    const trek = slider.locator('div[data-orientation="horizontal"]').last();
     const b = await trek.boundingBox();
     await page.mouse.move(b.x + b.width * frac, b.y + b.height / 2, { steps: 25 });
     await page.waitForTimeout(300);
@@ -144,8 +171,31 @@ try {
 
   console.log(`[${detik()}s] menjalankan inpainting`);
   await ketik(page.locator('input[type="text"]').last(), 'a broken satellite');
-  await klik(page.locator('button:has-text("Execute Inpainting")'), 2000);
-  await page.waitForTimeout(300000).catch(() => {});
+  await klik(page.locator('button:has-text("Execute Inpainting")'), 1500);
+
+  // Menunggu berbasis spinner, bukan tunggu buta — supaya durasi video wajar.
+  try {
+    await page.waitForSelector('[data-testid="stSpinner"]', { timeout: 60000 });
+    console.log(`[${detik()}s] proses inpainting berjalan`);
+    await page.waitForSelector('[data-testid="stSpinner"]', { state: 'detached', timeout: 300000 });
+    await page.waitForTimeout(3000);
+
+    const nErr = await page.locator('[data-testid="stException"]').count();
+    const peringatan = (await page.locator('[data-testid="stAlert"]').allTextContents())
+      .find(t => t.includes('coret') || t.includes('Error'));
+    if (nErr === 0 && !peringatan) {
+      inpaintBerhasil = true;
+      console.log(`[${detik()}s] inpainting SELESAI`);
+    } else {
+      console.log(`[${detik()}s] inpainting bermasalah: ${peringatan || 'exception'}`);
+    }
+  } catch {
+    console.log(`[${detik()}s] inpainting TIDAK berjalan (spinner tidak muncul)`);
+  }
+
+  // Perlihatkan hasil akhir sejenak sebelum rekaman ditutup.
+  await page.mouse.move(LEBAR * 0.45, TINGGI * 0.6, { steps: 25 });
+  await page.waitForTimeout(6000);
 
 } catch (e) {
   console.log('BERHENTI:', e.message.split('\n')[0]);
@@ -157,12 +207,13 @@ try {
   const webm = readdirSync(DIR_VIDEO).filter(f => f.endsWith('.webm'));
   if (!webm.length) { console.log('tidak ada rekaman'); process.exit(1); }
   const sumber = join(DIR_VIDEO, webm[webm.length - 1]);
-  const tujuan = 'video_demo_aplikasi_BFGAI.mp4';
+  const tujuan = join('..', '..', 'video_demo_aplikasi_BFGAI.mp4');
   try {
     execFileSync('ffmpeg', ['-y', '-i', sumber, '-c:v', 'libx264', '-crf', '23',
                             '-pix_fmt', 'yuv420p', '-movflags', '+faststart', tujuan],
                  { stdio: 'ignore' });
     console.log('video siap :', tujuan);
+    console.log('inpainting :', inpaintBerhasil ? 'BERHASIL' : 'GAGAL — video belum layak dikumpulkan');
     const durasi = execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration',
                                             '-of', 'csv=p=0', tujuan]).toString().trim();
     console.log('durasi     :', Number(durasi).toFixed(0), 'detik');
