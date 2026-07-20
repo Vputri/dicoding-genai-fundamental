@@ -43,10 +43,17 @@ for nama in WAJIB:
                 "— jalankan di Colab lalu unduh ulang"
             )
 
-        isi = p.read_text(encoding="utf-8")
-        if SDXL_RE.search(isi):
-            masalah.append(f"{nama}: terdeteksi rujukan SDXL — dilarang tips rubrik")
-        if TOKEN_RE.search(isi):
+        # Baris komentar dilewati: menyebut SDXL untuk menjelaskan mengapa TIDAK
+        # dipakai bukan pelanggaran — yang dilarang adalah benar-benar memuatnya.
+        baris_kode = [
+            l for c in nb["cells"] if c["cell_type"] == "code"
+            for l in "".join(c["source"]).split("\n")
+            if not l.lstrip().startswith("#")
+        ]
+        if any(SDXL_RE.search(l) for l in baris_kode):
+            masalah.append(f"{nama}: SDXL dipakai di kode aktif — dilarang tips rubrik")
+
+        if TOKEN_RE.search(p.read_text(encoding="utf-8")):
             masalah.append(f"{nama}: kemungkinan authtoken ngrok tertulis literal")
 
     if p.suffix == ".mp4" and p.stat().st_size < 100_000:
