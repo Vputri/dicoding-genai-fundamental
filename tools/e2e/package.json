@@ -1,0 +1,12 @@
+{
+  "name": "bfgai-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Uji end-to-end aplikasi Streamlit StudioAI lewat tautan ngrok, sebelum direkam.",
+  "scripts": {
+    "test": "node e2e.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.61.1"
+  }
+}

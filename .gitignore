@@ -3,3 +3,8 @@ __pycache__/
 ._*
 .DS_Store
 BFGAI_*.zip
+
+# dependensi & artefak uji e2e
+tools/e2e/node_modules/
+tools/e2e/package-lock.json
+tools/e2e/*.png

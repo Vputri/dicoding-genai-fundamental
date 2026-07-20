@@ -178,12 +178,14 @@ with tab_edit:
                 st.caption("Warnai area yang ingin diubah.")
 
                 # SATU-SATUNYA perubahan pada app.py bawaan template.
-                # streamlit-drawable-canvas gagal melaporkan tinggi frame-nya ke
-                # Streamlit modern, sehingga iframe komponen dirender setinggi 0px:
-                # kanvas ada di DOM tetapi tidak terlihat dan tidak bisa dicoret.
+                # streamlit-drawable-canvas tidak berhasil melaporkan tinggi frame-nya,
+                # sehingga Streamlit merender iframe komponen dengan height="0":
+                # kanvas ADA di DOM (isinya setinggi ~540px) tetapi tidak terlihat
+                # sama sekali dan mustahil dicoret. Tidak ada pesan error yang muncul.
                 # Tingginya dipaksa lewat CSS agar kanvas tampil utuh.
                 st.markdown(
-                    f"<style>iframe.stCustomComponentV1{{height:{H + 30}px !important;}}</style>",
+                    f"<style>iframe[title='streamlit_drawable_canvas.st_canvas']"
+                    f"{{height:{H + 30}px !important;}}</style>",
                     unsafe_allow_html=True,
                 )
 
@@ -294,14 +296,18 @@ cells = [
     md("t2GnD1QImBX2", "# **Prepare Dependencies**"),
     code("0-WuMWt9hdbb", """
 !pip install -q pyngrok
-!pip install -q streamlit
+# PENTING — versi Streamlit disematkan.
+# streamlit-drawable-canvas (rilis terakhir 0.9.3, tahun 2023) memanggil
+# streamlit.elements.image.image_to_url(image, width: int, ...). Fungsi itu DIHAPUS
+# pada Streamlit 1.41 dan dipindah ke lokasi lain dengan tanda tangan berbeda.
+# Akibatnya pada Streamlit terbaru kanvas GAGAL SENYAP: komponen tidak muncul,
+# tanpa pesan error apa pun di layar.
+# 1.40.0 adalah versi terakhir yang masih cocok, sehingga app.py bawaan template
+# dapat dipakai apa adanya tanpa tambalan apa pun.
+!pip install -q streamlit==1.40.0
 !pip install -q torch
 !pip install -q diffusers
 !pip install -q transformers
-# CATATAN: template semula memakai streamlit_drawable_canvas==0.8.0. Versi tersebut
-# gagal ter-render pada Streamlit terbaru — komponen kustom sama sekali tidak muncul
-# (nol iframe), sehingga kanvas untuk membuat mask tidak bisa dipakai.
-# 0.9.3 adalah rilis terakhir dan berjalan normal.
 !pip install -q streamlit_drawable_canvas==0.9.3
 """),
     code("cURIiO0Yh6gP", """
@@ -498,42 +504,6 @@ def prepare_outpainting(image, expand_pixels=128):
 
     return canvas, mask
 
-
-# ---------------------------------------------------------------------------
-# Kompatibilitas streamlit-drawable-canvas dengan Streamlit modern
-# ---------------------------------------------------------------------------
-# st_canvas memanggil streamlit.elements.image.image_to_url untuk mengubah gambar
-# latar menjadi URL. Pada Streamlit modern fungsi itu dipindah ke
-# streamlit.elements.lib.image_utils DAN tanda tangannya berubah (parameter kedua
-# kini objek layout_config, bukan lagi width berupa int). Akibatnya st_canvas
-# gagal dan kanvas TIDAK muncul sama sekali di tab EDIT — tanpa pesan error
-# yang terlihat di layar. Rilis terakhir drawable-canvas (0.9.3, 2023) belum
-# menyesuaikan diri, jadi menaikkan versinya pun tidak menolong.
-#
-# Alih-alih mengejar API internal Streamlit yang terus berubah, gambar latar
-# diubah langsung menjadi data URI base64 — itulah satu-satunya yang dibutuhkan
-# komponen. Cara ini tidak bergantung pada versi Streamlit mana pun.
-#
-# Ditempatkan di logic.py karena app.py meng-import logic sebelum memanggil
-# st_canvas, sehingga app.py sama sekali tidak perlu diubah.
-import base64 as _base64
-import io as _io
-
-import streamlit.elements.image as _st_image
-
-
-def _image_to_data_url(image, *args, **kwargs):
-    if not isinstance(image, Image.Image):
-        image = Image.fromarray(image)
-    if image.mode not in ("RGB", "RGBA"):
-        image = image.convert("RGB")
-    buffer = _io.BytesIO()
-    image.save(buffer, format="PNG")
-    return "data:image/png;base64," + _base64.b64encode(buffer.getvalue()).decode()
-
-
-# Ditimpa tanpa syarat: fungsi bawaan mungkin ada, tetapi tanda tangannya tidak cocok.
-_st_image.image_to_url = _image_to_data_url
 '''),
 
     md("lldtOVOaqnt1",
