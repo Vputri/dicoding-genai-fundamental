@@ -487,6 +487,23 @@ def prepare_outpainting(image, expand_pixels=128):
     ### SELESAI CODE ###
 
     return canvas, mask
+
+
+# ---------------------------------------------------------------------------
+# Kompatibilitas streamlit-drawable-canvas dengan Streamlit modern
+# ---------------------------------------------------------------------------
+# st_canvas memanggil streamlit.elements.image.image_to_url. Sejak Streamlit 1.40
+# fungsi itu dipindah ke streamlit.elements.lib.image_utils, sehingga komponen
+# gagal dengan AttributeError dan kanvas TIDAK muncul sama sekali di tab EDIT.
+# Rilis terakhir drawable-canvas (0.9.3, 2023) belum menyesuaikan diri.
+#
+# Jembatan di bawah memasang kembali nama lamanya. Diletakkan di logic.py karena
+# app.py meng-import logic sebelum memanggil st_canvas, jadi app.py tidak perlu diubah.
+import streamlit.elements.image as _st_image
+
+if not hasattr(_st_image, "image_to_url"):
+    from streamlit.elements.lib.image_utils import image_to_url as _image_to_url
+    _st_image.image_to_url = _image_to_url
 '''),
 
     md("lldtOVOaqnt1",
