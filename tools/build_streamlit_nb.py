@@ -177,6 +177,16 @@ with tab_edit:
                 st.subheader("✍️ Draw Mask")
                 st.caption("Warnai area yang ingin diubah.")
 
+                # SATU-SATUNYA perubahan pada app.py bawaan template.
+                # streamlit-drawable-canvas gagal melaporkan tinggi frame-nya ke
+                # Streamlit modern, sehingga iframe komponen dirender setinggi 0px:
+                # kanvas ada di DOM tetapi tidak terlihat dan tidak bisa dicoret.
+                # Tingginya dipaksa lewat CSS agar kanvas tampil utuh.
+                st.markdown(
+                    f"<style>iframe.stCustomComponentV1{{height:{H + 30}px !important;}}</style>",
+                    unsafe_allow_html=True,
+                )
+
                 # Widget Canvas
                 canvas_result = st_canvas(
                     fill_color="rgba(255, 255, 255, 1.0)", # Warna Kuas Putih
