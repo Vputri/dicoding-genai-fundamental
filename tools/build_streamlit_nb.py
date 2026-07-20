@@ -288,7 +288,11 @@ cells = [
 !pip install -q torch
 !pip install -q diffusers
 !pip install -q transformers
-!pip install -q streamlit_drawable_canvas==0.8.0
+# CATATAN: template semula memakai streamlit_drawable_canvas==0.8.0. Versi tersebut
+# gagal ter-render pada Streamlit terbaru — komponen kustom sama sekali tidak muncul
+# (nol iframe), sehingga kanvas untuk membuat mask tidak bisa dipakai.
+# 0.9.3 adalah rilis terakhir dan berjalan normal.
+!pip install -q streamlit_drawable_canvas==0.9.3
 """),
     code("cURIiO0Yh6gP", """
 from pyngrok import ngrok
