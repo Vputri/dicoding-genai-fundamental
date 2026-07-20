@@ -492,18 +492,38 @@ def prepare_outpainting(image, expand_pixels=128):
 # ---------------------------------------------------------------------------
 # Kompatibilitas streamlit-drawable-canvas dengan Streamlit modern
 # ---------------------------------------------------------------------------
-# st_canvas memanggil streamlit.elements.image.image_to_url. Sejak Streamlit 1.40
-# fungsi itu dipindah ke streamlit.elements.lib.image_utils, sehingga komponen
-# gagal dengan AttributeError dan kanvas TIDAK muncul sama sekali di tab EDIT.
-# Rilis terakhir drawable-canvas (0.9.3, 2023) belum menyesuaikan diri.
+# st_canvas memanggil streamlit.elements.image.image_to_url untuk mengubah gambar
+# latar menjadi URL. Pada Streamlit modern fungsi itu dipindah ke
+# streamlit.elements.lib.image_utils DAN tanda tangannya berubah (parameter kedua
+# kini objek layout_config, bukan lagi width berupa int). Akibatnya st_canvas
+# gagal dan kanvas TIDAK muncul sama sekali di tab EDIT — tanpa pesan error
+# yang terlihat di layar. Rilis terakhir drawable-canvas (0.9.3, 2023) belum
+# menyesuaikan diri, jadi menaikkan versinya pun tidak menolong.
 #
-# Jembatan di bawah memasang kembali nama lamanya. Diletakkan di logic.py karena
-# app.py meng-import logic sebelum memanggil st_canvas, jadi app.py tidak perlu diubah.
+# Alih-alih mengejar API internal Streamlit yang terus berubah, gambar latar
+# diubah langsung menjadi data URI base64 — itulah satu-satunya yang dibutuhkan
+# komponen. Cara ini tidak bergantung pada versi Streamlit mana pun.
+#
+# Ditempatkan di logic.py karena app.py meng-import logic sebelum memanggil
+# st_canvas, sehingga app.py sama sekali tidak perlu diubah.
+import base64 as _base64
+import io as _io
+
 import streamlit.elements.image as _st_image
 
-if not hasattr(_st_image, "image_to_url"):
-    from streamlit.elements.lib.image_utils import image_to_url as _image_to_url
-    _st_image.image_to_url = _image_to_url
+
+def _image_to_data_url(image, *args, **kwargs):
+    if not isinstance(image, Image.Image):
+        image = Image.fromarray(image)
+    if image.mode not in ("RGB", "RGBA"):
+        image = image.convert("RGB")
+    buffer = _io.BytesIO()
+    image.save(buffer, format="PNG")
+    return "data:image/png;base64," + _base64.b64encode(buffer.getvalue()).decode()
+
+
+# Ditimpa tanpa syarat: fungsi bawaan mungkin ada, tetapi tanda tangannya tidak cocok.
+_st_image.image_to_url = _image_to_data_url
 '''),
 
     md("lldtOVOaqnt1",
