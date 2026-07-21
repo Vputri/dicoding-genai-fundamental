@@ -35,28 +35,24 @@ Perbandingan memakai prompt, negative prompt, dan seed (222) yang sama; hanya
 `guidance_scale` yang diubah: **1.5 — 7.5 — 15.0**, semuanya pada 30 step.
 
 *   **Gambar dengan "Scale" Rendah (CFG 1.5):**
-Gambar praktis mengabaikan prompt. Komposisinya penuh sesak oleh potongan bentuk
-dan warna acak sehingga terlihat seperti kolase; astronaut memang muncul, tetapi
-wajah dan proporsinya berantakan dan sulit dikenali. Instruksi gaya "flat vector,
-minimalis, palet pastel" tidak terbaca sama sekali — warnanya justru sangat ramai
-dan latar belakangnya kacau. Negative prompt juga nyaris tidak berpengaruh:
-karakteristik "messy" yang seharusnya ditolak justru paling menonjol di sini.
-Variasi visualnya paling tinggi, tetapi variasi itu datang dari model yang bebas
-mengarang, bukan dari prompt.
+Model hampir tidak digiring oleh prompt, sehingga hasilnya paling jauh menyimpang
+dari yang diminta. Objek yang disebut prompt — astronaut, dataran bulan, Bumi di
+latar — muncul setengah-setengah atau bercampur menjadi bentuk yang sulit dikenali,
+dan komposisinya terasa acak. Gaya yang diminta ("minimal detail, 2D digital
+illustration") tidak terbaca; negative prompt pun nyaris tidak berpengaruh karena
+bobot panduannya terlalu lemah untuk menolak apa pun. Variasi visualnya paling
+tinggi, tetapi variasi itu berasal dari model yang mengarang bebas, bukan dari prompt.
 
 *   **Gambar dengan "Scale" Tinggi (CFG 15.0):**
-Kepatuhan terhadap prompt melonjak drastis. Astronaut kartun tampil utuh di tengah
-dengan garis tebal, bentuk sederhana, latar belakang rapi berisi bintang dan
-gelembung — persis instruksi "flat vector illustration, clean lines, minimalist".
-Dibandingkan CFG 1.5, detail latarnya justru lebih sedikit tetapi jauh lebih
-terkontrol dan bersih. Efek sampingnya terlihat pada warna: kontras dan saturasi
-naik berlebihan (ungu dan kuning menjadi sangat pekat), sehingga gradasi lembut
-hilang dan gambar terasa agak "keras". Nuansa pastel yang diminta prompt malah
-lebih tepat pada CFG 7.5.
+Kepatuhan pada prompt melonjak: seluruh objek yang diminta hadir dan tertata jelas,
+siluetnya tegas, dan gaya ilustrasi 2D-nya konsisten. Dibanding CFG 1.5, detail
+latarnya justru lebih sedikit namun jauh lebih terkontrol. Efek sampingnya muncul
+pada warna — kontras dan saturasi naik berlebihan sehingga gradasi halus hilang dan
+gambar terasa "keras", ciri khas guidance yang terlalu kuat.
 
-*   **Kesimpulan:** CFG 7.5 adalah titik seimbang — komposisinya sesuai prompt,
-garisnya bersih, dan palet pastelnya masih terjaga. Karena itu nilai inilah yang
-dipakai sebagai default pada seluruh eksperimen berikutnya."""
+*   **Kesimpulan:** CFG 7.5 adalah titik seimbang — objeknya lengkap sesuai prompt
+tanpa saturasi berlebihan. Nilai inilah yang dipakai sebagai default pada seluruh
+eksperimen berikutnya, dan juga sesuai rentang 7–8 yang umum dianjurkan untuk SD 1.5."""
 
 MD_STEP = """### **Inference Step Explanation:**
 
@@ -65,25 +61,24 @@ hanya `num_inference_steps` yang diubah: **10 step** (rentang rendah) dan
 **40 step** (rentang tinggi).
 
 *   **Gambar dengan "Step" Rendah (10 step):**
-Proses denoising berhenti sebelum tuntas, sehingga sisa noise masih terlihat jelas.
-Permukaannya berbintik dan bertekstur kasar, warnanya belum menyatu dan cenderung
-berlumur seperti cat basah. Tepi objek tidak tegas: garis luar astronaut bergelombang
-dan menyatu dengan latar. Muncul juga artefak bentuk — bintang dan planet di latar
-belakang tidak utuh, sebagian hanya berupa gumpalan. Komposisi besarnya sudah benar
-(astronaut di tengah, latar luar angkasa), tetapi hasilnya terasa belum selesai dan
-justru bertabrakan dengan negative prompt "grainy, unfinished".
+Denoising berhenti sebelum tuntas, sehingga sisa noise masih tertinggal di gambar.
+Permukaannya berbintik dan bertekstur kasar, warna antarbidang belum menyatu, dan
+tepi objek tidak tegas — garis luar astronaut bergelombang serta cenderung melebur
+dengan latar. Detail kecil paling menderita: elemen di latar belakang belum
+terbentuk utuh dan sebagian hanya berupa gumpalan. Komposisi besarnya sudah benar,
+tetapi hasilnya terasa belum selesai dan justru bertabrakan dengan negative prompt
+"grainy, unfinished".
 
 *   **Gambar dengan "Step" Tinggi (40 step):**
-Denoising selesai penuh, dan perbedaannya sangat kentara. Bidang warna menjadi rata
-dan solid, tanpa bintik maupun tekstur sisa. Garis luar objek tajam dan konsisten,
-persis karakter ilustrasi vektor yang diminta prompt. Elemen latar belakang kini
-terbentuk sempurna: bintang benar-benar bersudut lima, gelembung benar-benar bulat,
-planet punya cincin yang jelas. Secara visual hasilnya jauh lebih stabil dan
-"selesai", meskipun waktu komputasinya sekitar empat kali lipat.
+Denoising selesai penuh dan perbedaannya kentara. Bidang warna menjadi rata dan
+bersih tanpa bintik, garis luar objek tajam dan konsisten, serta detail kecil di
+latar belakang terbentuk sempurna. Hasilnya jauh lebih stabil dan "selesai",
+dengan konsekuensi waktu komputasi sekitar empat kali lipat.
 
 *   **Kesimpulan:** Menambah step tidak mengubah komposisi (seed dan CFG sama),
-melainkan menyempurnakan eksekusinya. Peningkatan terbesar terjadi pada rentang awal;
-di atas ~30 step perbedaannya mulai mengecil, sehingga 30–40 step sudah memadai."""
+melainkan menyempurnakan eksekusinya. Peningkatan terbesar terjadi pada rentang
+awal dan mulai mengecil di atas ~50 step — karena itu `generate_advanced_image()`
+memakai 90 step untuk mengejar detail maksimal tanpa boros berlebihan."""
 
 MD_SCHED = """### **Scheduler Comparation:**
 
@@ -92,31 +87,26 @@ Ketiganya dijalankan dengan prompt, negative prompt, seed (222), CFG (7.5), dan
 model **tidak** dimuat ulang (dibuktikan oleh id UNet yang sama sebelum/sesudah).
 
 *   **Gambar dengan "Euler A Scheduler":**
-Menghasilkan komposisi yang paling berbeda dari kedua scheduler lain. Astronaut
-digambar lebih kecil dan duduk di dalam wahana berbentuk mangkuk, latar ungu
-dipenuhi bintang kuning besar. Sifat *ancestral*-nya menyuntikkan noise acak baru
-pada tiap langkah, sehingga meski seed-nya sama hasilnya "melenceng" paling jauh
-dan terasa paling kreatif. Bidang warnanya paling datar dan detailnya paling
-sedikit. Muncul pula artefak khas data latih berupa tulisan samar menyerupai
-watermark di bagian tengah gambar.
+Menghasilkan komposisi yang paling berbeda dari kedua scheduler lain. Sifatnya
+*ancestral* — menyuntikkan noise acak baru pada setiap langkah — sehingga meskipun
+seed-nya sama, hasilnya menyimpang paling jauh dan terasa paling "kreatif".
+Bidang warnanya paling datar dan detail halusnya paling sedikit di antara ketiganya.
 
 *   **Gambar dengan "DPM++ Scheduler":**
-Hasilnya paling bersih dan paling konvergen. Astronaut tampil besar di tengah
-dengan garis tegas dan warna merata, latar belakang rapi dan seimbang. Pada jumlah
-step yang sama, DPM++ terlihat paling "matang" — hasilnya menyerupai gambar yang
-dibuat scheduler lain pada step lebih tinggi. Ini sesuai sifatnya sebagai solver
-orde tinggi yang konvergen paling cepat, sehingga paling hemat untuk step rendah.
+Hasilnya paling bersih dan paling konvergen. Garis objek tegas, warna merata, dan
+komposisinya paling tertata. Sebagai solver orde tinggi, DPM++ mencapai kualitas
+"matang" pada jumlah step yang lebih sedikit — pada 30 step hasilnya sudah setara
+scheduler lain di step yang lebih tinggi, sehingga paling hemat komputasi.
 
 *   **Gambar dengan "DDIM Scheduler":**
-Berada di antara keduanya. Komposisinya mirip DPM++, tetapi latar belakangnya diisi
-lebih banyak elemen kecil — bintang, gelembung, dan planet dalam jumlah lebih padat
-serta ukuran lebih bervariasi. Garisnya sedikit lebih lembut dan kontrasnya lebih
-rendah dibanding DPM++. DDIM bersifat deterministik sehingga hasilnya dapat diulang
-persis, tetapi pada 30 step konvergensinya belum sepenuhnya setara DPM++.
+Berada di antara keduanya. Komposisinya berdekatan dengan DPM++, tetapi latar
+belakangnya terisi lebih banyak elemen kecil, garisnya sedikit lebih lembut, dan
+kontrasnya lebih rendah. DDIM sepenuhnya deterministik sehingga hasilnya dapat
+diulang persis, namun pada 30 step konvergensinya belum sepenuhnya setara DPM++.
 
-*   **Kesimpulan:** DPM++ dipilih sebagai default karena paling cepat konvergen pada
-step rendah; Euler A cocok bila menginginkan variasi, DDIM bila memerlukan hasil
-yang benar-benar dapat direproduksi."""
+*   **Kesimpulan:** DPM++ dipilih sebagai default karena paling cepat konvergen;
+Euler A cocok bila menginginkan variasi, DDIM bila hasil yang benar-benar
+reproducible lebih diutamakan."""
 
 cells = [
     md("pdfg5WGru1p1", "# **Preparing Dependancies**"),
@@ -190,9 +180,11 @@ NEGATIVE_PROMPT = (
 SEED = 222
 
 # Prompt yang SAMA dipakai pada kedua fungsi agar perbandingan objektif.
+# Objek yang diminta instruksi disebut to the point: astronaut berbaju putih,
+# berdiri di dataran bulan, dengan Bumi sebagai latar belakang.
 PROMPT = (
-    "a cute cartoon astronaut floating in outer space, flat vector illustration, "
-    "pastel color palette, clean lines, minimalist, children book style"
+    "an astronaut with full white spacesuit, standing on a flat moon plain, "
+    "with earth in the background, minimal detail, 2D digital illustration"
 )
 
 
@@ -223,11 +215,17 @@ def generate_advanced_image(prompt, negative_prompt, seed,
     ).images[0]
 
 
-# Prompt, negative prompt, dan seed sengaja sama persis dengan sel sebelumnya.
+# Prompt, negative prompt, dan seed sengaja sama persis dengan sel sebelumnya —
+# perbedaannya MURNI pada hyperparameter, sehingga perbandingannya objektif.
+#
+# Langkah denoising dinaikkan jauh (90) agar hasilnya jauh lebih detail dan rapi
+# dibanding generate_simple_image() yang memakai default 50 langkah, sementara
+# guidance_scale ditahan di 7.5 supaya komposisinya tetap patuh pada prompt tanpa
+# saturasi berlebihan.
 img_advanced = generate_advanced_image(
     PROMPT, NEGATIVE_PROMPT, SEED,
     guidance_scale=7.5,
-    num_inference_steps=50,
+    num_inference_steps=90,
 )
 display(img_advanced)
 """),
@@ -367,20 +365,29 @@ def pratinjau_mask(image, mask, alpha=0.5):
 
 # Koordinat ditentukan HARDCODE lewat trial and error. Riwayat percobaannya:
 #
-#   (300,  60, 480, 220)  180x160 px  -> GAGAL. Area terlalu sempit dan letaknya
-#                                        menempel tepi kanan, sehingga model hanya
-#                                        mengisinya kembali dengan bintang & latar
-#                                        ungu — satelit tidak muncul sama sekali.
-#   (320, 300, 470, 450)  150x150 px  -> GAGAL. Lebih sempit lagi, hasilnya sekadar
-#                                        gumpalan kuning tanpa bentuk yang jelas.
-#   ( 24,  24, 264, 232)  240x208 px  -> BERHASIL. Kotak diperbesar hingga ~40% lebar
-#                                        kanvas dan digeser ke kuadran kiri-atas yang
-#                                        paling lapang, jauh dari tubuh astronaut.
-#                                        Barulah satelit terbentuk utuh.
+#   (300,  60, 480, 220)  180x160 px  -> GAGAL. Area terlalu sempit, sehingga model
+#                                        hanya mengisinya kembali dengan latar —
+#                                        satelit tidak terbentuk sama sekali.
+#   (320, 300, 470, 450)  150x150 px  -> GAGAL. Lebih sempit lagi, hasilnya cuma
+#                                        gumpalan warna tanpa bentuk yang jelas.
+#   ( 24,  24, 264, 232)  240x208 px  -> Satelit akhirnya terbentuk, tetapi posisinya
+#                                        di pojok atas dan menyentuh helm astronaut.
+#   (296, 232, 496, 424)  200x192 px  -> GAGAL. Seluruh kotak jatuh di tanah datar
+#                                        yang kosong dan tidak menyentuh garis
+#                                        horizon, sehingga model hanya menambalnya
+#                                        dengan tekstur tanah — yang muncul cuma
+#                                        bercak menyerupai kawah.
+#   (232, 168, 500, 424)  268x256 px  -> DIPAKAI. Kotak diperbesar (~52% lebar
+#                                        kanvas), digeser mendekat ke astronaut,
+#                                        dan tepi atasnya dinaikkan sampai
+#                                        menyentuh garis horizon sehingga satelit
+#                                        punya langit gelap sebagai latar kontras.
+#                                        Tetap di bawah Bumi agar Bumi tidak rusak.
 #
-# Pelajaran: pada SD-inpainting, mask yang terlalu kecil membuat konteks sekitar
-# mendominasi, sehingga area itu cuma "ditambal" mengikuti latar — bukan diisi objek baru.
-KOTAK_SATELIT = (24, 24, 264, 232)
+# Dua pelajaran: (1) mask yang terlalu kecil membuat konteks sekitar mendominasi,
+# (2) mask yang seluruhnya berada di bidang seragam (tanah polos) hanya akan
+# ditambal mengikuti bidang itu — objek baru butuh tepi/horizon sebagai pijakan.
+KOTAK_SATELIT = (232, 168, 500, 424)
 
 mask_manual = buat_mask_kotak(img_advanced.size, KOTAK_SATELIT)
 display(pratinjau_mask(img_advanced, mask_manual))
@@ -388,12 +395,12 @@ display(pratinjau_mask(img_advanced, mask_manual))
 
     md("Pbc6xhxxjmxh", "### **Generate**"),
     code("HKCRX2KFjqPG", """
-# guidance_scale sengaja dinaikkan ke 12 (bukan 7.5 seperti text-to-image) dan
+# guidance_scale sengaja dinaikkan ke 15 (bukan 7.5 seperti text-to-image) dan
 # strength dikunci 1.0. Pada percobaan dengan CFG 7.5, model terlalu "sopan" pada
 # konteks sekitar dan hanya meneruskan latar belakang, sehingga objek baru tidak
 # pernah terbentuk di dalam mask.
 def inpaint_engine(image, mask, prompt, negative_prompt="", seed=SEED_INPAINT,
-                   guidance_scale=12.0, num_inference_steps=50, strength=1.0):
+                   guidance_scale=15.0, num_inference_steps=60, strength=1.0):
     w, h = image.size
     generator = torch.Generator(device=DEVICE).manual_seed(seed)
     return inpaint_pipe(
@@ -412,16 +419,22 @@ def inpaint_engine(image, mask, prompt, negative_prompt="", seed=SEED_INPAINT,
 
 # Objek diletakkan di awal prompt dan disebut berulang agar bobotnya dominan.
 PROMPT_SATELIT = (
-    "a large broken satellite, damaged space satellite with cracked solar panels "
-    "and a bent antenna, floating in space, flat vector illustration, "
-    "bold clean outlines, pastel color palette"
+    "a large broken satellite spacecraft, wide solar panel wings and a dish antenna, "
+    "damaged and tilted on the ground, metal debris"
 )
+
+# Negative prompt rubrik TIDAK dipakai di sini. Isinya menolak "photorealistic,
+# realistic, photograph, 3d render", padahal gambar dasar hasil Kriteria 1 justru
+# bergaya realistis — memakainya sama saja menyuruh model menghindari gaya yang
+# harus ia tiru, sehingga tambalan tidak pernah menyatu menjadi objek. Negative
+# prompt di bawah hanya menolak cacat visual, bukan gayanya.
+NEGATIVE_INPAINT = "blurry, low quality, deformed, text, watermark, empty flat ground"
 
 img_inpaint = inpaint_engine(
     image=img_advanced,
     mask=mask_manual,
     prompt=PROMPT_SATELIT,
-    negative_prompt=NEGATIVE_PROMPT,
+    negative_prompt=NEGATIVE_INPAINT,
     seed=SEED_INPAINT,
 )
 display(img_inpaint)
@@ -477,15 +490,15 @@ def buat_mask_segmentasi(image, target, threshold=0.4, invert=False):
 
 # Objek utamanya disegmentasi otomatis, lalu mask DIBALIK: yang diganti justru
 # latar belakangnya, sementara astronaut dipertahankan utuh.
-mask_auto = buat_mask_segmentasi(img_advanced, "the cartoon astronaut", invert=True)
+mask_auto = buat_mask_segmentasi(img_advanced, "the astronaut in a white spacesuit", invert=True)
 display(pratinjau_mask(img_advanced, mask_auto))
 """),
 
     md("foiYnRrOkMZO", "### **Generate**"),
     code("vCcexx-5kPCd", """
 PROMPT_AUTOMASK = (
-    "colorful nebula and distant stars in deep space, "
-    "flat vector illustration, pastel color palette, clean lines"
+    "deep black starry space with a large planet earth in the background, "
+    "2D digital illustration"
 )
 
 img_automask = inpaint_engine(
@@ -533,8 +546,8 @@ display(pratinjau_mask(kanvas_out, mask_out))
     md("PNDRqGFQku7R", "### **Generate**"),
     code("4q6oI-jfkbi1", """
 PROMPT_OUTPAINT = (
-    "continuation of outer space scene with distant stars and nebula, "
-    "flat vector illustration, same pastel color palette, clean lines"
+    "continuation of the flat moon surface with starry black space above, "
+    "2D digital illustration"
 )
 
 img_outpaint = inpaint_engine(
