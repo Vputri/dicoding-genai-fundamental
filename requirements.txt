@@ -1,6 +1,6 @@
 # Proyek Image Generation — Generative Image Suite (BFGAI)
 # Versi dikunci agar reviewer dapat mereproduksi tanpa konflik dependensi.
-# Basis: Google Colab, Python 3.11, GPU T4.
+# Basis: Google Colab, Python 3.12, GPU T4.
 
 # ---- Pipeline difusi (Kriteria 1 & 2) ----
 diffusers==0.32.2
@@ -14,6 +14,8 @@ pillow==11.1.0
 numpy==2.2.2
 
 # ---- Antarmuka (Kriteria 3) ----
-streamlit==1.41.1
+# 1.40.0 adalah versi TERAKHIR yang masih kompatibel dengan
+# streamlit-drawable-canvas 0.9.3; pada 1.41+ kanvas gagal tampil.
+streamlit==1.40.0
 streamlit-drawable-canvas==0.9.3
 pyngrok==7.2.3

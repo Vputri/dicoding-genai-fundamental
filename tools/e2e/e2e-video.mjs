@@ -193,9 +193,15 @@ try {
     console.log(`[${detik()}s] inpainting TIDAK berjalan (spinner tidak muncul)`);
   }
 
-  // Perlihatkan hasil akhir sejenak sebelum rekaman ditutup.
+  // Perlihatkan hasil akhir sejenak sebelum rekaman ditutup. Halaman digulir
+  // ke kanvas lebih dulu: setelah inpainting, app.py memasang gambar hasil
+  // sebagai latar kanvas — tanpa digulir, hasilnya terpotong di bawah layar
+  // dan penonton tidak pernah benar-benar melihat buktinya.
   await page.mouse.move(LEBAR * 0.45, TINGGI * 0.6, { steps: 25 });
-  await page.waitForTimeout(6000);
+  try {
+    await page.locator('iframe[src*="st_canvas"]').scrollIntoViewIfNeeded({ timeout: 10000 });
+  } catch { await page.mouse.wheel(0, 420); }
+  await page.waitForTimeout(9000);
 
 } catch (e) {
   console.log('BERHENTI:', e.message.split('\n')[0]);
