@@ -87,26 +87,30 @@ Ketiganya dijalankan dengan prompt, negative prompt, seed (222), CFG (7.5), dan
 model **tidak** dimuat ulang (dibuktikan oleh id UNet yang sama sebelum/sesudah).
 
 *   **Gambar dengan "Euler A Scheduler":**
-Menghasilkan komposisi yang paling berbeda dari kedua scheduler lain. Sifatnya
-*ancestral* — menyuntikkan noise acak baru pada setiap langkah — sehingga meskipun
-seed-nya sama, hasilnya menyimpang paling jauh dan terasa paling "kreatif".
-Bidang warnanya paling datar dan detail halusnya paling sedikit di antara ketiganya.
+Menghasilkan gambar yang paling jauh menyimpang dari kedua scheduler lain, baik
+komposisi maupun gayanya. Astronaut diambil dari jarak paling dekat, permukaan
+bulannya berwarna kelabu kebiruan dan penuh bebatuan, serta hasilnya terlihat
+paling menyerupai foto — justru berlawanan dengan arahan "minimal detail, 2D
+digital illustration". Penyebabnya sifat *ancestral*: noise acak baru disuntikkan
+pada setiap langkah, sehingga meski seed-nya sama lintasan denoising-nya berbeda
+jauh dan hasilnya paling sulit direproduksi.
 
 *   **Gambar dengan "DPM++ Scheduler":**
-Hasilnya paling bersih dan paling konvergen. Garis objek tegas, warna merata, dan
-komposisinya paling tertata. Sebagai solver orde tinggi, DPM++ mencapai kualitas
-"matang" pada jumlah step yang lebih sedikit — pada 30 step hasilnya sudah setara
-scheduler lain di step yang lebih tinggi, sehingga paling hemat komputasi.
+Hasilnya paling bersih dan paling patuh pada prompt. Bidang warnanya rata, siluet
+astronaut tegas, dataran bulannya mulus, dan Bumi tergambar rapi di latar — paling
+mendekati gaya ilustrasi 2D yang diminta. Sebagai solver orde tinggi, DPM++ sudah
+mencapai kualitas "matang" pada 30 step, sehingga paling hemat komputasi.
 
 *   **Gambar dengan "DDIM Scheduler":**
-Berada di antara keduanya. Komposisinya berdekatan dengan DPM++, tetapi latar
-belakangnya terisi lebih banyak elemen kecil, garisnya sedikit lebih lembut, dan
-kontrasnya lebih rendah. DDIM sepenuhnya deterministik sehingga hasilnya dapat
-diulang persis, namun pada 30 step konvergensinya belum sepenuhnya setara DPM++.
+Komposisinya paling berdekatan dengan DPM++ — sudut pandang, posisi astronaut, dan
+letak Bumi hampir sama. Bedanya, permukaan tanahnya jauh lebih bertekstur dan
+bayangan astronaut lebih tegas, sehingga kesannya lebih fotografis dan sedikit
+menjauh dari gaya datar yang diminta. DDIM sepenuhnya deterministik sehingga
+hasilnya dapat diulang persis.
 
-*   **Kesimpulan:** DPM++ dipilih sebagai default karena paling cepat konvergen;
-Euler A cocok bila menginginkan variasi, DDIM bila hasil yang benar-benar
-reproducible lebih diutamakan."""
+*   **Kesimpulan:** DPM++ dipilih sebagai default karena paling cepat konvergen dan
+paling setia pada gaya yang diminta prompt; Euler A cocok bila menginginkan variasi,
+DDIM bila hasil yang benar-benar reproducible lebih diutamakan."""
 
 cells = [
     md("pdfg5WGru1p1", "# **Preparing Dependancies**"),
