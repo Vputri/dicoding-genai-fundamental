@@ -219,7 +219,11 @@ with tab_edit:
 
                             # Proses Masker
                             # Ambil Alpha Channel
-                            mask_data = canvas_result.image_data[:, :, 3]
+                            # .copy() WAJIB: canvas_result.image_data dikembalikan
+                            # sebagai array read-only, sehingga menulis langsung ke
+                            # slice-nya melempar "ValueError: assignment destination
+                            # is read-only" dan inpainting tidak pernah berjalan.
+                            mask_data = canvas_result.image_data[:, :, 3].copy()
 
                             # Ubah abu-abu jadi putih mutlak
                             mask_data[mask_data > 0] = 255
@@ -516,15 +520,11 @@ Cell ini digunakan untuk mengatur *authentication token Ngrok* dan menjalankan a
 
 Apabila Anda belum mengetahui cara mendapatkan *authentication token Ngrok* milik Anda sendiri, silahkan baca pada bagian **tips and tricks submission**."""),
     code("AlnsPa6Fhvwa", """
-# Token TIDAK ditulis sebagai literal di notebook.
-# Simpan lebih dulu di panel Secrets Colab (ikon kunci) dengan nama NGROK_AUTH_TOKEN,
-# lalu aktifkan "Notebook access".
+# Token dibaca dari Secrets Colab (ikon kunci, nama: NGROK_AUTH_TOKEN) supaya
+# tidak ikut tersimpan di dalam berkas notebook yang dikumpulkan.
 from google.colab import userdata
 
-auth_token = userdata.get("NGROK_AUTH_TOKEN")
-assert auth_token, "NGROK_AUTH_TOKEN belum di-set pada Secrets Colab."
-
-ngrok.set_auth_token(auth_token)
+ngrok.set_auth_token(userdata.get("NGROK_AUTH_TOKEN"))
 subprocess.Popen(["streamlit", "run", "app.py"])
 """),
 

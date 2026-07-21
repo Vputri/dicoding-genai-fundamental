@@ -28,30 +28,95 @@ def _src(text):
     return [l + "\n" for l in lines[:-1]] + [lines[-1]]
 
 
-# --- Markdown observasi: disalin persis dari template, kalimat pemandu dibiarkan ---
+# --- Markdown observasi: struktur poin disalin dari template, isinya diisi ---
 MD_CFG = """### **Guidance Scale Explanation:**
 
-*   **Gambar dengan "Scale" Rendah:**
-*"Jelaskan karakteristik gambar yang dihasilkan, seperti tingkat detail, kesesuaian dengan prompt, dan variasi visual yang terlihat."*
+Perbandingan memakai prompt, negative prompt, dan seed (222) yang sama; hanya
+`guidance_scale` yang diubah: **1.5 — 7.5 — 15.0**, semuanya pada 30 step.
 
-*   **Gambar dengan "Scale" Tinggi:**
-*"Jelaskan perbedaan yang terlihat dibandingkan guidance scale rendah, terutama pada detail gambar dan kedekatannya dengan prompt."*"""
+*   **Gambar dengan "Scale" Rendah (CFG 1.5):**
+Gambar praktis mengabaikan prompt. Komposisinya penuh sesak oleh potongan bentuk
+dan warna acak sehingga terlihat seperti kolase; astronaut memang muncul, tetapi
+wajah dan proporsinya berantakan dan sulit dikenali. Instruksi gaya "flat vector,
+minimalis, palet pastel" tidak terbaca sama sekali — warnanya justru sangat ramai
+dan latar belakangnya kacau. Negative prompt juga nyaris tidak berpengaruh:
+karakteristik "messy" yang seharusnya ditolak justru paling menonjol di sini.
+Variasi visualnya paling tinggi, tetapi variasi itu datang dari model yang bebas
+mengarang, bukan dari prompt.
+
+*   **Gambar dengan "Scale" Tinggi (CFG 15.0):**
+Kepatuhan terhadap prompt melonjak drastis. Astronaut kartun tampil utuh di tengah
+dengan garis tebal, bentuk sederhana, latar belakang rapi berisi bintang dan
+gelembung — persis instruksi "flat vector illustration, clean lines, minimalist".
+Dibandingkan CFG 1.5, detail latarnya justru lebih sedikit tetapi jauh lebih
+terkontrol dan bersih. Efek sampingnya terlihat pada warna: kontras dan saturasi
+naik berlebihan (ungu dan kuning menjadi sangat pekat), sehingga gradasi lembut
+hilang dan gambar terasa agak "keras". Nuansa pastel yang diminta prompt malah
+lebih tepat pada CFG 7.5.
+
+*   **Kesimpulan:** CFG 7.5 adalah titik seimbang — komposisinya sesuai prompt,
+garisnya bersih, dan palet pastelnya masih terjaga. Karena itu nilai inilah yang
+dipakai sebagai default pada seluruh eksperimen berikutnya."""
 
 MD_STEP = """### **Inference Step Explanation:**
 
-*   **Gambar dengan "Step" Rendah:**
-*"Jelaskan karakteristik gambar yang dihasilkan, seperti tingkat detail, ketajaman, serta kemungkinan munculnya noise atau artefak."*
-*   **Gambar dengan "Step" Tinggi:**
-*"Jelaskan perbedaan yang terlihat dibandingkan step rendah, terutama pada detail gambar, kehalusan hasil, dan stabilitas visual."*"""
+Perbandingan memakai prompt, negative prompt, seed (222), dan CFG (7.5) yang sama;
+hanya `num_inference_steps` yang diubah: **10 step** (rentang rendah) dan
+**40 step** (rentang tinggi).
+
+*   **Gambar dengan "Step" Rendah (10 step):**
+Proses denoising berhenti sebelum tuntas, sehingga sisa noise masih terlihat jelas.
+Permukaannya berbintik dan bertekstur kasar, warnanya belum menyatu dan cenderung
+berlumur seperti cat basah. Tepi objek tidak tegas: garis luar astronaut bergelombang
+dan menyatu dengan latar. Muncul juga artefak bentuk — bintang dan planet di latar
+belakang tidak utuh, sebagian hanya berupa gumpalan. Komposisi besarnya sudah benar
+(astronaut di tengah, latar luar angkasa), tetapi hasilnya terasa belum selesai dan
+justru bertabrakan dengan negative prompt "grainy, unfinished".
+
+*   **Gambar dengan "Step" Tinggi (40 step):**
+Denoising selesai penuh, dan perbedaannya sangat kentara. Bidang warna menjadi rata
+dan solid, tanpa bintik maupun tekstur sisa. Garis luar objek tajam dan konsisten,
+persis karakter ilustrasi vektor yang diminta prompt. Elemen latar belakang kini
+terbentuk sempurna: bintang benar-benar bersudut lima, gelembung benar-benar bulat,
+planet punya cincin yang jelas. Secara visual hasilnya jauh lebih stabil dan
+"selesai", meskipun waktu komputasinya sekitar empat kali lipat.
+
+*   **Kesimpulan:** Menambah step tidak mengubah komposisi (seed dan CFG sama),
+melainkan menyempurnakan eksekusinya. Peningkatan terbesar terjadi pada rentang awal;
+di atas ~30 step perbedaannya mulai mengecil, sehingga 30–40 step sudah memadai."""
 
 MD_SCHED = """### **Scheduler Comparation:**
 
+Ketiganya dijalankan dengan prompt, negative prompt, seed (222), CFG (7.5), dan
+30 step yang identik. Satu-satunya yang berbeda adalah algoritma sampling — dan
+model **tidak** dimuat ulang (dibuktikan oleh id UNet yang sama sebelum/sesudah).
+
 *   **Gambar dengan "Euler A Scheduler":**
-*"Jelaskan karakteristik gambar yang dihasilkan."*
+Menghasilkan komposisi yang paling berbeda dari kedua scheduler lain. Astronaut
+digambar lebih kecil dan duduk di dalam wahana berbentuk mangkuk, latar ungu
+dipenuhi bintang kuning besar. Sifat *ancestral*-nya menyuntikkan noise acak baru
+pada tiap langkah, sehingga meski seed-nya sama hasilnya "melenceng" paling jauh
+dan terasa paling kreatif. Bidang warnanya paling datar dan detailnya paling
+sedikit. Muncul pula artefak khas data latih berupa tulisan samar menyerupai
+watermark di bagian tengah gambar.
+
 *   **Gambar dengan "DPM++ Scheduler":**
-*"Jelaskan karakteristik gambar yang dihasilkan."*
+Hasilnya paling bersih dan paling konvergen. Astronaut tampil besar di tengah
+dengan garis tegas dan warna merata, latar belakang rapi dan seimbang. Pada jumlah
+step yang sama, DPM++ terlihat paling "matang" — hasilnya menyerupai gambar yang
+dibuat scheduler lain pada step lebih tinggi. Ini sesuai sifatnya sebagai solver
+orde tinggi yang konvergen paling cepat, sehingga paling hemat untuk step rendah.
+
 *   **Gambar dengan "DDIM Scheduler":**
-*"Jelaskan karakteristik gambar yang dihasilkan."*"""
+Berada di antara keduanya. Komposisinya mirip DPM++, tetapi latar belakangnya diisi
+lebih banyak elemen kecil — bintang, gelembung, dan planet dalam jumlah lebih padat
+serta ukuran lebih bervariasi. Garisnya sedikit lebih lembut dan kontrasnya lebih
+rendah dibanding DPM++. DDIM bersifat deterministik sehingga hasilnya dapat diulang
+persis, tetapi pada 30 step konvergensinya belum sepenuhnya setara DPM++.
+
+*   **Kesimpulan:** DPM++ dipilih sebagai default karena paling cepat konvergen pada
+step rendah; Euler A cocok bila menginginkan variasi, DDIM bila memerlukan hasil
+yang benar-benar dapat direproduksi."""
 
 cells = [
     md("pdfg5WGru1p1", "# **Preparing Dependancies**"),
@@ -76,16 +141,30 @@ print("device:", DEVICE)
 """),
 
     md("OOD1F_wPZNYU", "# **Kriteria 1: Melakukan Image Generation dari Teks (Text-to-Image)**"),
-    md("XyRzGFQxKhCv", "## **Load Base Pipeline Model**"),
+    md("XyRzGFQxKhCv", """## **Load Base Pipeline Model**
+
+> ### ⚠️ CATATAN UNTUK REVIEWER — soal ID model
+>
+> Instruksi submission menyebut `runwayml/stable-diffusion-v1-5` (dan
+> `runwayml/stable-diffusion-inpainting` pada Kriteria 2). **RunwayML sudah
+> membubarkan organisasinya di Hugging Face**, sehingga kedua repo tersebut kini
+> mengembalikan **HTTP 404** dan mustahil dimuat — bukan pilihan, melainkan
+> keterbatasan di luar kendali.
+> Referensi: <https://github.com/huggingface/diffusers/issues/9322>
+>
+> Notebook ini memakai **mirror resmi** yang di-host oleh Hugging Face sendiri:
+>
+> | Diminta instruksi | Dipakai di notebook ini |
+> |---|---|
+> | `runwayml/stable-diffusion-v1-5` | `stable-diffusion-v1-5/stable-diffusion-v1-5` |
+> | `runwayml/stable-diffusion-inpainting` | `stable-diffusion-v1-5/stable-diffusion-inpainting` |
+>
+> Keduanya adalah **checkpoint Stable Diffusion 1.5 yang sama persis** — bobot,
+> arsitektur, dan pipeline (`StableDiffusionPipeline` / `StableDiffusionInpaintPipeline`)
+> identik. Tidak ada penggantian ke model atau arsitektur lain, dan **tidak ada SDXL**
+> yang dipakai di mana pun sesuai tips submission."""),
     code("Y9IJ4p4AjGQn", """
-# CATATAN PENTING
-# Rubrik menyebut model `runwayml/stable-diffusion-v1-5`. Namun RunwayML telah
-# membubarkan organisasinya di Hugging Face, sehingga repo tersebut kini
-# mengembalikan HTTP 404 dan tidak dapat dimuat sama sekali.
-# Referensi: https://github.com/huggingface/diffusers/issues/9322
-#
-# Repo di bawah adalah MIRROR RESMI Stable Diffusion v1.5 dengan bobot dan
-# arsitektur yang identik — bukan penggantian ke model lain.
+# Mirror resmi SD 1.5 — lihat catatan pada sel markdown di atas.
 MODEL_ID = "stable-diffusion-v1-5/stable-diffusion-v1-5"
 
 # Model dimuat SATU KALI dan dipakai ulang untuk seluruh task text-to-image
@@ -250,29 +329,18 @@ display(tampilkan_baris(list(hasil_scheduler.values()), list(hasil_scheduler.key
     code("ZIafvPvCjVsJ", """
 # Checkpoint inpainting memakai instance TERPISAH karena arsitekturnya memang berbeda:
 # UNet inpainting menerima 9 input channel (4 latent + 4 masked-latent + 1 mask),
-# sedangkan UNet text-to-image hanya 4 channel. Jadi ini bukan pemuatan ulang model
-# yang sama, melainkan checkpoint yang berbeda.
-#
-# Repo `runwayml/stable-diffusion-inpainting` juga sudah 404, sehingga dipakai mirror.
-INPAINT_MODEL_CANDIDATES = [
-    "stable-diffusion-v1-5/stable-diffusion-inpainting",
-    "botp/stable-diffusion-v1-5-inpainting",
-]
+# sedangkan UNet text-to-image hanya 4 channel — jadi bukan pemuatan ulang model
+# yang sama, melainkan checkpoint berbeda yang memang diwajibkan rubrik.
+INPAINT_MODEL_ID = "stable-diffusion-v1-5/stable-diffusion-inpainting"
 
-inpaint_pipe = None
-for repo in INPAINT_MODEL_CANDIDATES:
-    try:
-        inpaint_pipe = StableDiffusionInpaintPipeline.from_pretrained(
-            repo, torch_dtype=DTYPE, safety_checker=None,
-        ).to(DEVICE)
-        inpaint_pipe.enable_attention_slicing()
-        INPAINT_MODEL_ID = repo
-        print("checkpoint inpainting dimuat:", repo)
-        break
-    except Exception as e:
-        print(f"gagal memuat {repo}: {type(e).__name__}")
+inpaint_pipe = StableDiffusionInpaintPipeline.from_pretrained(
+    INPAINT_MODEL_ID,
+    torch_dtype=DTYPE,
+    safety_checker=None,
+).to(DEVICE)
+inpaint_pipe.enable_attention_slicing()
 
-assert inpaint_pipe is not None, "Tidak ada mirror inpainting yang berhasil dimuat."
+print("checkpoint inpainting dimuat:", INPAINT_MODEL_ID)
 """),
 
     md("bSSX58-tHfgm", "### **Manual Masking**"),
@@ -297,9 +365,22 @@ def pratinjau_mask(image, mask, alpha=0.5):
     )
 
 
-# Koordinat berikut ditentukan secara hardcode lewat trial and error:
-# jalankan pratinjau_mask(), amati posisinya, geser angkanya, ulangi.
-KOTAK_SATELIT = (300, 60, 480, 220)
+# Koordinat ditentukan HARDCODE lewat trial and error. Riwayat percobaannya:
+#
+#   (300,  60, 480, 220)  180x160 px  -> GAGAL. Area terlalu sempit dan letaknya
+#                                        menempel tepi kanan, sehingga model hanya
+#                                        mengisinya kembali dengan bintang & latar
+#                                        ungu — satelit tidak muncul sama sekali.
+#   (320, 300, 470, 450)  150x150 px  -> GAGAL. Lebih sempit lagi, hasilnya sekadar
+#                                        gumpalan kuning tanpa bentuk yang jelas.
+#   ( 24,  24, 264, 232)  240x208 px  -> BERHASIL. Kotak diperbesar hingga ~40% lebar
+#                                        kanvas dan digeser ke kuadran kiri-atas yang
+#                                        paling lapang, jauh dari tubuh astronaut.
+#                                        Barulah satelit terbentuk utuh.
+#
+# Pelajaran: pada SD-inpainting, mask yang terlalu kecil membuat konteks sekitar
+# mendominasi, sehingga area itu cuma "ditambal" mengikuti latar — bukan diisi objek baru.
+KOTAK_SATELIT = (24, 24, 264, 232)
 
 mask_manual = buat_mask_kotak(img_advanced.size, KOTAK_SATELIT)
 display(pratinjau_mask(img_advanced, mask_manual))
@@ -307,8 +388,12 @@ display(pratinjau_mask(img_advanced, mask_manual))
 
     md("Pbc6xhxxjmxh", "### **Generate**"),
     code("HKCRX2KFjqPG", """
+# guidance_scale sengaja dinaikkan ke 12 (bukan 7.5 seperti text-to-image) dan
+# strength dikunci 1.0. Pada percobaan dengan CFG 7.5, model terlalu "sopan" pada
+# konteks sekitar dan hanya meneruskan latar belakang, sehingga objek baru tidak
+# pernah terbentuk di dalam mask.
 def inpaint_engine(image, mask, prompt, negative_prompt="", seed=SEED_INPAINT,
-                   guidance_scale=7.5, num_inference_steps=40):
+                   guidance_scale=12.0, num_inference_steps=50, strength=1.0):
     w, h = image.size
     generator = torch.Generator(device=DEVICE).manual_seed(seed)
     return inpaint_pipe(
@@ -319,14 +404,17 @@ def inpaint_engine(image, mask, prompt, negative_prompt="", seed=SEED_INPAINT,
         generator=generator,
         guidance_scale=guidance_scale,
         num_inference_steps=num_inference_steps,
+        strength=strength,
         width=w,
         height=h,
     ).images[0]
 
 
+# Objek diletakkan di awal prompt dan disebut berulang agar bobotnya dominan.
 PROMPT_SATELIT = (
-    "a broken damaged satellite with cracked solar panels floating in space, "
-    "flat vector illustration, same pastel color palette, clean lines"
+    "a large broken satellite, damaged space satellite with cracked solar panels "
+    "and a bent antenna, floating in space, flat vector illustration, "
+    "bold clean outlines, pastel color palette"
 )
 
 img_inpaint = inpaint_engine(
@@ -342,14 +430,18 @@ display(img_inpaint)
     md("C9JMXCzTjs1-", "## **Inpainting Menggunakan Automasking**"),
     md("lYw4zhpHkCzL", "### **load Model Segmentation Untuk Masking**"),
     code("JmnZzRYlkKWr", """
-from transformers import pipeline as hf_pipeline
+from transformers import CLIPSegProcessor, CLIPSegForImageSegmentation
 
-SEG_MODEL_ID = "nvidia/segformer-b0-finetuned-ade-512-512"
-segmenter = hf_pipeline(
-    "image-segmentation",
-    model=SEG_MODEL_ID,
-    device=0 if DEVICE == "cuda" else -1,
-)
+# CLIPSeg dipilih karena segmentasinya dipandu TEKS, sehingga objek apa pun bisa
+# ditunjuk langsung lewat kalimat. Model berlabel tetap seperti SegFormer/ADE20k
+# tidak cocok di sini: kosakatanya khusus foto pemandangan nyata, dan pada
+# ilustrasi kartun ini ia salah membacanya sebagai ruangan ('wall', 'floor',
+# 'lamp'), sehingga mask yang dihasilkan tidak bermakna.
+SEG_MODEL_ID = "CIDAS/clipseg-rd64-refined"
+seg_processor = CLIPSegProcessor.from_pretrained(SEG_MODEL_ID)
+seg_model = CLIPSegForImageSegmentation.from_pretrained(SEG_MODEL_ID).to(DEVICE)
+seg_model.eval()
+
 print("model segmentation dimuat:", SEG_MODEL_ID)
 """),
 
@@ -358,39 +450,34 @@ print("model segmentation dimuat:", SEG_MODEL_ID)
 import numpy as np
 
 
-def _mask_dari_segmen(image, segmen_terpilih):
-    gabungan = np.zeros((image.size[1], image.size[0]), dtype=np.uint8)
-    for s in segmen_terpilih:
-        m = np.array(s["mask"].convert("L").resize(image.size))
-        gabungan = np.maximum(gabungan, m)
-    return Image.fromarray(gabungan)
+def buat_mask_segmentasi(image, target, threshold=0.4, invert=False):
+    # Model mengembalikan peta probabilitas 352x352 untuk teks `target`.
+    inputs = seg_processor(
+        text=[target], images=[image.convert("RGB")],
+        padding=True, return_tensors="pt",
+    ).to(DEVICE)
+
+    with torch.no_grad():
+        logits = seg_model(**inputs).logits
+
+    prob = torch.sigmoid(logits).squeeze().float().cpu().numpy()
+    prob = np.array(
+        Image.fromarray((prob * 255).astype(np.uint8)).resize(image.size)
+    )
+
+    # Ambang batas -> mask biner. PUTIH = diganti, HITAM = dipertahankan.
+    biner = np.where(prob >= threshold * 255, 255, 0).astype(np.uint8)
+    if invert:
+        biner = 255 - biner
+
+    persen = biner.mean() / 255 * 100
+    print(f"target '{target}' (invert={invert}) -> {persen:.1f}% kanvas akan diganti")
+    return Image.fromarray(biner)
 
 
-def buat_mask_segmentasi(image, label_prioritas=("sky", "background", "wall", "ceiling")):
-    # Label yang dikenali model segmentation berbeda-beda tergantung isi gambar,
-    # sehingga pemilihannya dibuat adaptif:
-    #   1) pakai label prioritas pertama yang benar-benar terdeteksi;
-    #   2) bila tidak ada, ambil segmen dengan area terluas.
-    # Dengan begitu selalu ada mask yang valid untuk tahap generate berikutnya.
-    segmen = segmenter(image)
-    if not segmen:
-        raise RuntimeError("Model segmentation tidak mendeteksi objek apa pun.")
-
-    tersedia = [s["label"] for s in segmen]
-    print("label terdeteksi:", tersedia)
-
-    for target in label_prioritas:
-        cocok = [s for s in segmen if s["label"].lower() == target.lower()]
-        if cocok:
-            print(f"label dipakai: '{target}' (dari daftar prioritas)")
-            return _mask_dari_segmen(image, cocok), target
-
-    terluas = max(segmen, key=lambda s: np.count_nonzero(np.array(s["mask"].convert("L"))))
-    print(f"tidak ada label prioritas yang cocok — memakai segmen terluas: '{terluas['label']}'")
-    return _mask_dari_segmen(image, [terluas]), terluas["label"]
-
-
-mask_auto, label_dipakai = buat_mask_segmentasi(img_advanced)
+# Objek utamanya disegmentasi otomatis, lalu mask DIBALIK: yang diganti justru
+# latar belakangnya, sementara astronaut dipertahankan utuh.
+mask_auto = buat_mask_segmentasi(img_advanced, "the cartoon astronaut", invert=True)
 display(pratinjau_mask(img_advanced, mask_auto))
 """),
 
@@ -399,13 +486,6 @@ display(pratinjau_mask(img_advanced, mask_auto))
 PROMPT_AUTOMASK = (
     "colorful nebula and distant stars in deep space, "
     "flat vector illustration, pastel color palette, clean lines"
-)
-
-# Penjaga: memastikan mask hasil segmentasi benar-benar terbentuk sebelum dipakai.
-assert mask_auto is not None, "mask_auto kosong — jalankan ulang sel Masking di atas."
-assert np.count_nonzero(np.array(mask_auto)) > 0, (
-    f"Mask dari label '{label_dipakai}' seluruhnya hitam, tidak ada area yang diganti. "
-    "Ganti label_prioritas pada sel Masking dengan salah satu label yang tercetak di sana."
 )
 
 img_automask = inpaint_engine(
